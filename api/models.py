@@ -75,11 +75,34 @@ class Category(models.Model):
         verbose_name="Category Thumbnail Image"
     )
 
-    properties = models.ManyToManyField(
-        ProductsProperties, 
-        related_name="category_properties",
-        blank=True
-    )
+    # Category properties should be a name, value combination
+    # name: str value: array of objects in string format that should be added and stringified in the 
+    # process in a json string --- [{"name": "color", "value": ["Green", "Blue", "Red"]}]
+
+    properties = models.JSONField(blank=True, null=True)
+
+
+    @property
+    def products(self):
+        products = self._products.all()
+        products_list = [{
+            'name': product.name,
+            'category_details': {
+                'id': self.id,
+                'name': self.name
+            },
+            'category': self.id,
+            'description': product.description,
+            'price': product.price,
+            'previous_price': product.previous_price,
+            'discount': product.discount,
+            'quantity_available': product.quantity_available,
+            'product_in_stock': product.product_in_stock,
+            'free_shipping': product.free_shipping,
+            'ratings': product.ratings,
+            'properties': product.properties
+        } for product in products]
+        return products_list
 
     class Meta:
         verbose_name_plural = "Categories"
@@ -88,6 +111,19 @@ class Category(models.Model):
     def __str__(self) -> str:
         return self.name
 
+class Condition(models.Model):
+    name = models.CharField(
+        max_length=100, 
+        verbose_name="Condition Name", 
+        blank=False, null=True
+    )
+
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name_plural = "Product Conditions"
+        verbose_name = "Product Condition"
 
 
 class Product(models.Model):
@@ -98,9 +134,15 @@ class Product(models.Model):
     )
     category = models.ForeignKey(
         Category, 
-        related_name="products", 
+        related_name="_products", 
         on_delete=models.CASCADE, 
         blank=False, null=False
+    )
+
+    condition = models.ForeignKey(
+        Condition, 
+        related_name="_condition",
+        on_delete=models.CASCADE
     )
 
     description = models.TextField(
@@ -108,10 +150,15 @@ class Product(models.Model):
         blank=False, null=False
     )
     price = models.BigIntegerField(default=0)
+    previous_price = models.BigIntegerField(default=0)
     discount = models.BigIntegerField(default=0)
     quantity_available = models.IntegerField(default=0)
     product_in_stock = models.BooleanField(default=False)
+    free_shipping = models.BooleanField(default=False)
     ratings = models.IntegerField(default=1)
+
+    # properties -- [{"name": "color", "value": "Red"}]
+    properties = models.JSONField(blank=True, null=True)
 
     class Meta:
         verbose_name_plural = "Products"
@@ -122,6 +169,22 @@ class Product(models.Model):
     def thumbnails(self):
         images_url_list = [album.image.url for album in self.album.images.all()]
         return images_url_list
+    
+    @property
+    def condition_details(self):
+        condition = self.condition
+        return {
+            'id': condition.id,
+            'name': condition.name,
+        }
+
+    @property
+    def category_details(self):
+        cat = self.category;
+        return {
+            'id': cat.id,
+            'name': cat.name,
+        }
     
 
     def __str__(self) -> str:

@@ -7,7 +7,7 @@ from .models import (
     Image,
     Product,
     ShippingAddress,
-    # ImageAlbum
+    Condition
 )
 
 
@@ -20,6 +20,6 @@ admin.site.register(NewsLetter)
 admin.site.register(Order)
 admin.site.register(Image)
 admin.site.register(ShippingAddress)
-# admin.site.register(ImageAlbum)
+admin.site.register(Condition)
 
 
